@@ -227,12 +227,21 @@ Run commands directly — don't tell the user to run them.
 pnpm run dev          # Host via tsx (no watch)
 pnpm run build        # Compile host TypeScript (src/)
 ./container/build.sh  # Rebuild agent container image (nanoclaw-agent:latest)
-pnpm test             # Host tests (vitest)
+pnpm test             # Host tests (vitest): src/, setup/, scripts/, container/*.test.ts, .claude/skills/*/scripts/
+pnpm exec vitest run src/command-gate.test.ts  # Single test file
+pnpm exec vitest run -t "name substring"       # Single test by name
+pnpm run typecheck    # tsc --noEmit (host)
+pnpm run lint         # eslint src/ (lint:fix to autofix)
+pnpm run format:check # prettier on src/**/*.ts (format to write)
+pnpm run chat <msg>   # Talk to the wired agent via the CLI channel (host must be running)
 
 # Agent-runner (Bun — separate package tree under container/agent-runner/)
 cd container/agent-runner && bun install   # After editing agent-runner deps
-cd container/agent-runner && bun test      # Container tests (bun:test)
+cd container/agent-runner && bun run test  # Container tests (bun test --isolate)
+cd container/agent-runner && bun test src/formatter.test.ts    # Single file
 ```
+
+CI (`.github/workflows/ci.yml`, single `gate` job) requires: `format:check`, host `tsc --noEmit`, agent-runner `tsc -p container/agent-runner/tsconfig.json --noEmit`, sharded `vitest run`, agent-runner `bun run test`, `skill-pins:check`, and an Iron/front-proxy check. Lint is not in CI. The husky pre-commit hook runs `prettier --write` on `src/` and re-stages formatted files.
 
 Container typecheck is a separate tsconfig — if you edit `container/agent-runner/src/`, run `pnpm exec tsc -p container/agent-runner/tsconfig.json --noEmit` from root (or `bun run typecheck` from `container/agent-runner/`).
 
